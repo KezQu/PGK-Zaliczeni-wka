@@ -1,0 +1,17 @@
+﻿  dummy.cpp
+  fs_inet.cpp
+  ftp.cpp
+  http.cpp
+  protocol.cpp
+  sckaddr.cpp
+  sckfile.cpp
+  sckipc.cpp
+  sckstrm.cpp
+  socket.cpp
+  url.cpp
+  sockmsw.cpp
+  urlmsw.cpp
+  webrequest.cpp
+  webrequest_winhttp.cpp
+  webrequest_curl.cpp
+  wx_net.vcxproj -> C:\Users\jmiku\Desktop\Programming\PGK\wxWidgets-3.2.2.1\lib\vc_x64_lib\wxbase32ud_net.lib

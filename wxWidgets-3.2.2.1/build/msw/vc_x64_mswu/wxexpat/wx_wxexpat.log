@@ -1,0 +1,4 @@
+﻿  xmlparse.c
+  xmlrole.c
+  xmltok.c
+  wx_wxexpat.vcxproj -> C:\Users\jmiku\Desktop\Programming\PGK\wxWidgets-3.2.2.1\lib\vc_x64_lib\wxexpat.lib

@@ -1,0 +1,4 @@
+﻿  dummy.cpp
+  xtixml.cpp
+  xml.cpp
+  wx_xml.vcxproj -> C:\Users\jmiku\Desktop\Programming\PGK\wxWidgets-3.2.2.1\lib\vc_x64_lib\wxbase32u_xml.lib

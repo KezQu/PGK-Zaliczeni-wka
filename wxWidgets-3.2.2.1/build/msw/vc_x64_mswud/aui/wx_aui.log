@@ -1,0 +1,13 @@
+﻿  dummy.cpp
+  auibar.cpp
+  auibook.cpp
+  dockart.cpp
+  floatpane.cpp
+  framemanager.cpp
+  tabart.cpp
+  tabmdi.cpp
+  xh_auitoolb.cpp
+  tabartmsw.cpp
+  barartmsw.cpp
+  xh_aui.cpp
+  wx_aui.vcxproj -> C:\Users\jmiku\Desktop\Programming\PGK\wxWidgets-3.2.2.1\lib\vc_x64_lib\wxmsw32ud_aui.lib
