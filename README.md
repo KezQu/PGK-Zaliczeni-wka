@@ -1,1 +1,1 @@
-Teoretycznie powinno działać z tak pushniętym wxWidgets, tylko jest delikatny problem z lfs storage,  więc ewentualnie będzie trzeba wx'a usunąć i każdy samemu podawać ścieżki
+Test bez wxWidgets, wystarczy go skleić do sklonowanego repozytorium a git przy commitowaniu ignoruje to wxWidgets żeby było wygodniej
