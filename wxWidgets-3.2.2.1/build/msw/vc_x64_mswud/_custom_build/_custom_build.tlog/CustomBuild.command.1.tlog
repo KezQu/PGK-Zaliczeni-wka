@@ -1,4 +1,0 @@
-^C:\USERS\JMIKU\DESKTOP\PROGRAMMING\PGK\WXWIDGETS-3.2.2.1\INCLUDE\WX\MSW\SETUP.H
-copy "C:\Users\jmiku\Desktop\Programming\PGK\wxWidgets-3.2.2.1\include\wx\msw\setup.h" ..\..\lib\vc_x64_lib\mswud\wx\setup.h
-^C:\USERS\JMIKU\DESKTOP\PROGRAMMING\PGK\WXWIDGETS-3.2.2.1\INCLUDE\WX\MSW\GENRCDEFS.H
-cl /EP /nologo "C:\Users\jmiku\Desktop\Programming\PGK\wxWidgets-3.2.2.1\include\wx\msw\genrcdefs.h" > "..\..\lib\vc_x64_lib\mswud\wx\msw\rcdefs.h"
