@@ -16,10 +16,13 @@
 #include <wx/settings.h>
 #include <wx/string.h>
 #include <wx/sizer.h>
-#include <wx/tglbtn.h>
+#include <wx/stattext.h>
+#include <wx/textctrl.h>
+#include <wx/button.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
 #include <wx/icon.h>
+#include <wx/tglbtn.h>
 #include <wx/frame.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -33,9 +36,26 @@ class BFrame : public wxFrame
 	private:
 
 	protected:
-		wxPanel* contourBMP;
-		wxPanel* vectorBMP;
-		wxToggleButton* Animate;
+		wxPanel* mainPanel;
+		wxPanel* bmpPanel;
+		wxStaticText* m_staticText1;
+		wxTextCtrl* FuncInsert;
+		wxButton* submitButton;
+		wxButton* contourButton;
+		wxButton* vectorButton;
+		wxButton* saveButton;
+		wxToggleButton* animateButton;
+
+		// Virtual event handlers, override them in your derived class
+		virtual void mainPanelOnUpdateUI( wxUpdateUIEvent& event ) { event.Skip(); }
+		virtual void bmpPanelOnSize( wxSizeEvent& event ) { event.Skip(); }
+		virtual void submitButtonOnButtonClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void contourButtonOnButtonClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void vectorButtonOnButtonClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void saveButtonOnButtonClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void animateButtonOnToggleButton( wxCommandEvent& event ) { event.Skip(); }
+		virtual void animateButtonOnUpdateUI( wxUpdateUIEvent& event ) { event.Skip(); }
+
 
 	public:
 

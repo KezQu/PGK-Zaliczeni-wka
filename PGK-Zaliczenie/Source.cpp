@@ -1,5 +1,5 @@
 #include <wx/wxprec.h>
-#include "BasicFrame.h"
+#include "MFrame.h"
 
 class MyApp : public wxApp
 {
@@ -12,7 +12,7 @@ wxIMPLEMENT_APP(MyApp);
 bool MyApp::OnInit()
 {
 	SetProcessDPIAware();
-	BFrame* frame = new BFrame(NULL);
+	MFrame* frame = new MFrame(NULL);
 	frame->Show(true);
 	return true;
 }
