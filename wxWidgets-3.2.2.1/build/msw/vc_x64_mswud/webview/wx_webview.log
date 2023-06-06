@@ -1,7 +1,0 @@
-﻿  dummy.cpp
-  webview.cpp
-  webviewarchivehandler.cpp
-  webviewfshandler.cpp
-  webview_ie.cpp
-  webview_edge.cpp
-  wx_webview.vcxproj -> C:\Users\jmiku\Desktop\Programming\PGK\wxWidgets-3.2.2.1\lib\vc_x64_lib\wxmsw32ud_webview.lib

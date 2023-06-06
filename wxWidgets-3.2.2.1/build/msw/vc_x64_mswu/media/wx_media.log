@@ -1,6 +1,0 @@
-﻿  dummy.cpp
-  mediactrlcmn.cpp
-  mediactrl_am.cpp
-  mediactrl_qt.cpp
-  mediactrl_wmp10.cpp
-  wx_media.vcxproj -> C:\Users\jmiku\Desktop\Programming\PGK\wxWidgets-3.2.2.1\lib\vc_x64_lib\wxmsw32u_media.lib
