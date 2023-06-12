@@ -32,9 +32,69 @@ void MFrame::bmpPanelOnSize(wxSizeEvent& event)
 	Repaint();
 }
 
+int calculate(std::string s) {
+	struct Op {
+		char c;
+		char precidence;
+		int (*fct) (int oper1, int oper2);
+	} ops[] = {
+	  {'+', 1, [](int oper1, int oper2) -> int { return oper1 + oper2; }},
+	  {'-', 1, [](int oper1, int oper2) -> int { return oper1 - oper2; }},
+	  {'*', 2, [](int oper1, int oper2) -> int { return oper1 * oper2; }},
+	  {'/', 2, [](int oper1, int oper2) -> int { return oper1 / oper2; }} };
+
+	std::stack <Op*> operators;
+	std::stack <int> operands;
+
+	// Function that will process the top operator from the stack
+	auto process_op = [](std::stack<Op*>& operators, std::stack<int>& operands) -> void {
+		int operand2 = operands.top();
+		operands.pop();
+		int operand1 = operands.top();
+		operands.pop();
+		Op* op = operators.top();
+		operators.pop();
+		operands.push(op->fct(operand1, operand2));
+	};
+
+	const char* str = s.c_str();
+	while (*str) {
+		// Skip whitespace
+		if (iswspace(*str)) { ++str; }
+		// Reading operand
+		else if (iswdigit(*str)) {
+			char* end_pos;
+			int operand = strtol(str, &end_pos, 10);
+			str = end_pos;
+			operands.push(operand);
+		}
+		else {
+			// Find the corresponding operator
+			for (auto& op : ops) {
+				if (*str == op.c) {
+					// Process any pending operators with a higher or equal precidence
+					while (!operators.empty() && operators.top()->precidence >= op.precidence) {
+						process_op(operators, operands);
+					}
+					operators.push(&op);
+					++str;
+					break;
+				}
+			}
+		}
+	}
+
+	// Flush any remaining operators
+	while (!operators.empty()) {
+		process_op(operators, operands);
+	}
+
+	return operands.top();
+}
 void MFrame::submitButtonOnButtonClick(wxCommandEvent& event)
 {
 	_cachedData.resize(mapSize.first);
+
 #pragma omp parallel for
 	for (int x = 0; x < mapSize.first; x++)
 	{
@@ -184,10 +244,6 @@ void MFrame::Repaint()
 	float stepY = _panelSize.second / static_cast<float>(mapSize.second / 5);
 	for (int y = 0; y < mapSize.second / 5; y += _grain)
 		bdc.DrawLine(0, -y * stepY, 5, -y * stepY);
-}
-
-void MFrame::SaveToFile()
-{
 }
 
 void MFrame::CalcAnimation(bool generated)

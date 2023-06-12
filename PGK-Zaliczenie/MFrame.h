@@ -13,13 +13,14 @@
 #include <cstring>
 #include <fstream>
 #include <filesystem>
+#include <stack>
 
 class MFrame : public BFrame
 {
 private:
 	std::vector<std::vector<float>> _cachedData;
 	std::pair<float, float> minMax = { FLT_MAX,FLT_MIN };
-	std::pair<int, int> mapSize = { 5000,5000 };
+	std::pair<int, int> mapSize = { 1000,500 };
 	std::pair<int, int> _panelSize;
 	wxImage contourImg_org;
 	wxImage contourImg_cpy;
@@ -51,7 +52,6 @@ public:
 	void CalculateContour();
 	void CalculateVector();
 	void Repaint();
-	void SaveToFile();
 	void CalcAnimation(bool generated);
 	void Animate();
 };
