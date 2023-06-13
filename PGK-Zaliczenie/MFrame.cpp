@@ -227,7 +227,7 @@ void MFrame::Repaint()
 	{
 		contourImg_cpy = contourImg_org.Copy();
 		contourImg_cpy = contourImg_cpy.Rescale(_panelSize.first, _panelSize.second, wxIMAGE_QUALITY_HIGH);
-		//contourImg_cpy = contourImg_cpy.ConvertToMono(255,255,255); // zamiast odcieni szaroœci poziomice s¹ czarne
+		//contourImg_cpy = contourImg_cpy.ConvertToMono(255,255,255); // zamiast odcieni szaroï¿½ci poziomice sï¿½ czarne
 		wxBitmap contourBmp(contourImg_cpy);
 		bdc.DrawBitmap(contourBmp, 0, -_panelSize.second);
 	}
@@ -252,4 +252,97 @@ void MFrame::CalcAnimation(bool generated)
 
 void MFrame::Animate()
 {
+}
+
+bool any(char ch, std::vector<char> vec){
+	for(auto &i: vec)
+		if(ch==i) return true;
+	return false;
+}
+
+float readOperator(float x, float y, char op){
+	switch(op){
+		case '+': return x+y;
+		case '-': return x-y;
+		case '/': return x/y;
+		case '*': return x*y;
+	}
+}
+
+float String2Fun(std::string input, int x, int y)
+{	
+	std::vector<char> possibleOperators{'+', '-', '/', '*'};
+    std::map<char, int> ops
+    {
+        {'(', -1},
+        {'+', 0},
+        {'-', 0},
+        {'/', 1},
+        {'*', 1},
+        {')', 10}
+    };
+	auto comp = ops.key_comp();
+    std::vector<char> operators;
+    std::vector<char> queue;
+    for (auto &ch : input) {
+		switch (ch) {
+		case '+':
+		case '-':
+			while (operators.size() && ops[operators.back()] > -1) {
+				queue.push_back(operators.back());
+				operators.pop_back();
+			}
+			operators.push_back(ch);
+            break;
+		case '/':
+		case '*':
+			while (operators.size() && ops[operators.back()] > 0) {
+				queue.push_back(operators.back());
+				operators.pop_back();
+			}
+			operators.push_back(ch);
+            break;
+		case '(':
+			operators.push_back(ch);
+            break;
+		case ')':
+			while (ops[operators.back()] > -1) {
+				queue.push_back(operators.back());
+				operators.pop_back();
+				if (operators.size() == 0 && (operators.size()+queue.size() +1 != input.size())) {
+					//some exception handling (error window or smthng can pop up)
+					std::cout<<"Parenthesis mismatch1\n";
+					
+				}
+			}
+			operators.pop_back();
+            break;
+		default:
+            queue.push_back(ch);
+        }
+	}
+    while (operators.size()>0) {
+        queue.push_back(operators.back());
+        operators.pop_back();
+		
+    }
+	float val;
+	std::vector<float> stack;
+	for(const auto& it: queue){
+		if(!any(it, possibleOperators)){
+			if(it=='x'){
+				stack.push_back(x);
+			}else if(it=='y'){
+				stack.push_back(y);
+			}else{
+				stack.push_back(it-48);//atoi does not work for some reason
+			}
+		}else{
+			val=readOperator(stack[stack.size()-2], stack[stack.size()-1], it);
+			stack.pop_back();
+			stack.pop_back();
+			stack.push_back(val);
+		}
+	}
+	return stack[0];
 }

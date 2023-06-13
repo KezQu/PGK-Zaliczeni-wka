@@ -14,6 +14,7 @@
 #include <fstream>
 #include <filesystem>
 #include <stack>
+#include <map>
 
 class MFrame : public BFrame
 {
