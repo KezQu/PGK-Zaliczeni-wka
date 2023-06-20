@@ -24,7 +24,6 @@
 #include <wx/icon.h>
 #include <wx/tglbtn.h>
 #include <wx/frame.h>
-
 ///////////////////////////////////////////////////////////////////////////
 
 
@@ -33,36 +32,37 @@
 ///////////////////////////////////////////////////////////////////////////////
 class BFrame : public wxFrame
 {
-	private:
+private:
 
-	protected:
-		wxPanel* mainPanel;
-		wxPanel* bmpPanel;
-		wxStaticText* m_staticText1;
-		wxTextCtrl* FuncInsert;
-		wxButton* submitButton;
-		wxButton* contourButton;
-		wxButton* vectorButton;
-		wxButton* saveButton;
-		wxToggleButton* animateButton;
+protected:
+	wxPanel* mainPanel;
+	wxPanel* bmpPanel;
+	wxStaticText* m_staticText1;
+	wxTextCtrl* FuncInsert;
+	wxButton* submitButton;
+	wxStaticText* m_staticText2;
+	wxTextCtrl* Tinsert;
+	wxButton* contourButton;
+	wxButton* vectorButton;
+	wxButton* saveButton;
+	wxToggleButton* animateButton;
 
-		// Virtual event handlers, override them in your derived class
-		virtual void mainPanelOnUpdateUI( wxUpdateUIEvent& event ) { event.Skip(); }
-		virtual void bmpPanelOnSize( wxSizeEvent& event ) { event.Skip(); }
-		virtual void submitButtonOnButtonClick( wxCommandEvent& event ) { event.Skip(); }
-		virtual void contourButtonOnButtonClick( wxCommandEvent& event ) { event.Skip(); }
-		virtual void vectorButtonOnButtonClick( wxCommandEvent& event ) { event.Skip(); }
-		virtual void saveButtonOnButtonClick( wxCommandEvent& event ) { event.Skip(); }
-		virtual void animateButtonOnToggleButton( wxCommandEvent& event ) { event.Skip(); }
-		virtual void animateButtonOnUpdateUI( wxUpdateUIEvent& event ) { event.Skip(); }
+	// Virtual event handlers, override them in your derived class
+	virtual void mainPanelOnUpdateUI(wxUpdateUIEvent& event) { event.Skip(); }
+	virtual void bmpPanelOnSize(wxSizeEvent& event) { event.Skip(); }
+	virtual void submitButtonOnButtonClick(wxCommandEvent& event) { event.Skip(); }
+	virtual void contourButtonOnButtonClick(wxCommandEvent& event) { event.Skip(); }
+	virtual void vectorButtonOnButtonClick(wxCommandEvent& event) { event.Skip(); }
+	virtual void saveButtonOnButtonClick(wxCommandEvent& event) { event.Skip(); }
+	virtual void animateButtonOnToggleButton(wxCommandEvent& event) { event.Skip(); }
+	virtual void animateButtonOnUpdateUI(wxUpdateUIEvent& event) { event.Skip(); }
 
 
-	public:
+public:
 
-		BFrame( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Acceleration field"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 800,600 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
+	BFrame(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Acceleration field"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize(800, 600), long style = wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL);
 
-		~BFrame();
+	~BFrame();
 
 };
 
-//dsfsdgsdfgd

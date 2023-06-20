@@ -1,4 +1,5 @@
 #include "MFrame.h"
+#include "tinyexpr.h"
 #define CONTOURCOUNT 15
 
 MFrame::MFrame(wxWindow* parent)
@@ -41,7 +42,7 @@ void MFrame::submitButtonOnButtonClick(wxCommandEvent& event)
 	vectorImg_org.Destroy();
 	vectorImg_cpy.Destroy();
 	FuncInsert->GetValue().ToStdString().length() == 0 ? fun_formula = "x^2+y^2" : fun_formula = FuncInsert->GetValue().ToStdString().c_str();
-
+	t_val = std::stoi(Tinsert->GetValue().ToStdString());
 
 	//#pragma omp parallel for
 	for (int i = 0; i < mapSize.first; i++)
@@ -49,10 +50,11 @@ void MFrame::submitButtonOnButtonClick(wxCommandEvent& event)
 		_cachedData[i].resize(mapSize.second);
 		for (int j = 0; j < mapSize.second; j++)
 		{
-			double x, y;
-			te_variable vars[] = { {"x",&x}, {"y",&y} };
+			double x, y, t;
+			te_variable vars[] = { {"x",&x}, {"y",&y}, {"t",&t} };
 			int err;
-			te_expr* expr = te_compile(fun_formula.c_str(), vars, 2, &err);
+			t = t_val;
+			te_expr* expr = te_compile(fun_formula.c_str(), vars, 3, &err);
 			x = i / _grain;
 			y = j / _grain;
 			float fVal = te_eval(expr);
@@ -259,6 +261,7 @@ void MFrame::Repaint()
 		wxBitmap vectorBmp(vectorImg_cpy);
 		bdc.DrawBitmap(vectorBmp, 0, -_panelSize.second);
 		FuncInsert->GetValue().ToStdString().length() == 0 ? fun_formula = "x^2+y^2" : fun_formula = FuncInsert->GetValue().ToStdString().c_str();
+		t_val = std::stoi(Tinsert->GetValue().ToStdString());
 		for (int x = 25; x < GetClientSize().x - 220; x += 40)
 		{
 			for (int y = 25; y < GetClientSize().y - 30; y += 40)
@@ -266,35 +269,40 @@ void MFrame::Repaint()
 				wxPen pen(*wxBLACK, 3);
 				bdc.SetPen(pen);
 				double h = 10.e-5;
-				double _x, _y;
-				te_variable vars[] = { {"x",&_x}, {"y",&_y} };
+				double _x, _y, _t;
+				te_variable vars[] = { {"x",&_x}, {"y",&_y}, {"t",&_t} };
 				int err;
+				_t = t_val;
 
 				err = 0;
 				_x = (double)x + h;
 				_y = (double)y;
-				te_expr* expr = te_compile(fun_formula.c_str(), vars, 2, &err);
+				_t = t_val;
+				te_expr* expr = te_compile(fun_formula.c_str(), vars, 3, &err);
 				float fVal_xh = te_eval(expr);
 				te_free(expr);
 
 				err = 0;
 				_x = (double)x - h;
 				_y = (double)y;
-				expr = te_compile(fun_formula.c_str(), vars, 2, &err);
+				_t = t_val;
+				expr = te_compile(fun_formula.c_str(), vars, 3, &err);
 				float fVal_xh2 = te_eval(expr);
 				te_free(expr);
 
 				err = 0;
 				_x = (double)x;
 				_y = (double)y + h;
-				expr = te_compile(fun_formula.c_str(), vars, 2, &err);
+				_t = t_val;
+				expr = te_compile(fun_formula.c_str(), vars, 3, &err);
 				float fVal_yh = te_eval(expr);
 				te_free(expr);
 
 				err = 0;
 				_x = (double)x;
 				_y = (double)y - h;
-				expr = te_compile(fun_formula.c_str(), vars, 2, &err);
+				_t = t_val;
+				expr = te_compile(fun_formula.c_str(), vars, 3, &err);
 				float fVal_yh2 = te_eval(expr);
 				te_free(expr);
 
