@@ -41,8 +41,21 @@ void MFrame::submitButtonOnButtonClick(wxCommandEvent& event)
 	contourImg_cpy.Destroy();
 	vectorImg_org.Destroy();
 	vectorImg_cpy.Destroy();
-	FuncInsert->GetValue().ToStdString().length() == 0 ? fun_formula = "x^2+y^2" : fun_formula = FuncInsert->GetValue().ToStdString().c_str();
-	t_val = std::stoi(Tinsert->GetValue().ToStdString());
+	if (FuncInsert->GetValue().ToStdString().length() == 0)
+	{
+		wxMessageDialog(NULL, "Please enter the function formula!", "Warning", wxOK).ShowModal();
+		return;
+	}
+	fun_formula = FuncInsert->GetValue().ToStdString().c_str();
+
+
+	if (Tinsert->GetValue().ToStdString().length() == 0)
+	{
+		wxMessageDialog(NULL, "Please enter the t value!", "Warning", wxOK).ShowModal();
+		return;
+	}
+
+	t_val = std::stof(Tinsert->GetValue().ToStdString());
 
 	//#pragma omp parallel for
 	for (int i = 0; i < mapSize.first; i++)
@@ -116,74 +129,12 @@ void MFrame::saveButtonOnButtonClick(wxCommandEvent& event)
 void MFrame::animateButtonOnToggleButton(wxCommandEvent& event)
 {
 }
-/// liczy y lezace na prostej pomiedzy dwoma punktami
-/// liczy y lezace na prostej pomiedzy dwoma punktami
-double calculate_y(double x_s, double y_s, double x_e, double y_e, double x_curr)
-{
-	double x_a = x_s - x_e;
-	double y_a = y_s - y_e;
-	double x_b = x_curr - x_e;
-	if (y_e < y_s)
-	{
-		for (double i = y_e; i <= y_s; i += 0.01)
-		{
-			double y_b = i - y_e;
-			double area = x_a * y_b - y_a * x_b;
-			if (std::abs(area) < 0.05) return y_b;
-		}
-	}
-	else
-	{
-		for (double i = y_s; i <= y_e; i += 0.01)
-		{
-			double y_b = i - y_e;
-			double area = x_a * y_b - y_a * x_b;
-			if (std::abs(area) < 1) return y_b;
-		}
-	}
-}
-// wyznacza wszystkie punkty lezace miedzy start i end
-std::vector<std::pair<int, int>> calculate_point(int x_start, int y_start)
-{
-	std::vector<std::pair<int, int>> point_vector;
-	double normalize_size = std::sqrt(std::pow(static_cast<double>(x_start), 2) + std::pow(static_cast<double>(y_start), 2)) / 10.;
-	double x_end = static_cast<double>(x_start) - 2 * static_cast<double>(x_start) / normalize_size;
-	double y_end = static_cast<double>(y_start) - 2 * static_cast<double>(y_start) / normalize_size;
-
-	if (x_start < x_end)
-	{
-		for (double i = x_start; i <= x_end; i++)
-		{
-			double y_curr = calculate_y(x_start, y_start, x_end, y_end, i);
-			point_vector.push_back({ i, y_curr });
-			point_vector.push_back({ i, y_curr + 1. });
-			point_vector.push_back({ i, y_curr - 1. });
-			point_vector.push_back({ i, y_curr + 2. });
-			point_vector.push_back({ i, y_curr - 2. });
-		}
-	}
-	else
-	{
-		for (double i = x_end; i <= x_start; i++)
-		{
-			double y_curr = calculate_y(x_start, y_start, x_end, y_end, i);
-			point_vector.push_back({ i, y_curr });
-			point_vector.push_back({ i, y_curr + 1. });
-			point_vector.push_back({ i, y_curr - 1. });
-			point_vector.push_back({ i, y_curr + 2. });
-			point_vector.push_back({ i, y_curr - 2. });
-		}
-	}
-
-	return point_vector;
-}
 
 
 
 void MFrame::CalculateContour()
 {
 	double contourHeight = (minMax.second - minMax.first) / static_cast<double>(CONTOURCOUNT);
-	//
 #pragma omp parallel for
 	for (int y = 0; y < mapSize.second - 1; y++)
 		for (int x = 0; x < mapSize.first - 1; x++)
@@ -247,11 +198,22 @@ void MFrame::Repaint()
 
 	if (_bmp == CONTOUR && _functionLoaded)
 	{
+		
 		contourImg_cpy = contourImg_org.Copy();
 		contourImg_cpy = contourImg_cpy.Rescale(_panelSize.first, _panelSize.second, wxIMAGE_QUALITY_HIGH);
 		//contourImg_cpy = contourImg_cpy.ConvertToMono(255,255,255); // zamiast odcieni szarości poziomice są czarne
 		wxBitmap contourBmp(contourImg_cpy);
 		bdc.DrawBitmap(contourBmp, 0, -_panelSize.second);
+
+		wxPen pen1(wxColor(156, 156, 156), .3);
+		bdc.SetPen(pen1);
+
+		float stepX = _panelSize.first / static_cast<float>(mapSize.first / 5);
+		for (int x = 0; x < mapSize.first; x += _grain)
+			bdc.DrawLine(x * stepX, 0, x * stepX, -mapSize.second);
+		float stepY = _panelSize.second / static_cast<float>(mapSize.second / 5);
+		for (int y = 0; y < mapSize.second; y += _grain)
+			bdc.DrawLine(0, -y * stepY, mapSize.first, -y * stepY);
 
 	}
 	else if (_bmp == VECTOR && _functionLoaded)
@@ -260,13 +222,35 @@ void MFrame::Repaint()
 		vectorImg_cpy = vectorImg_cpy.Rescale(_panelSize.first, _panelSize.second, wxIMAGE_QUALITY_HIGH);
 		wxBitmap vectorBmp(vectorImg_cpy);
 		bdc.DrawBitmap(vectorBmp, 0, -_panelSize.second);
-		FuncInsert->GetValue().ToStdString().length() == 0 ? fun_formula = "x^2+y^2" : fun_formula = FuncInsert->GetValue().ToStdString().c_str();
-		t_val = std::stoi(Tinsert->GetValue().ToStdString());
+		if (FuncInsert->GetValue().ToStdString().length() == 0)
+		{
+			wxMessageDialog(NULL, "Please enter the function formula!", "Warning", wxOK).ShowModal();
+			return;
+		}
+		fun_formula = FuncInsert->GetValue().ToStdString().c_str();
+
+		if (Tinsert->GetValue().ToStdString().length() == 0)
+		{
+			wxMessageDialog(NULL, "Please enter the t value!", "Warning", wxOK).ShowModal();
+			return;
+		}
+		t_val = std::stof(Tinsert->GetValue().ToStdString());
+
+		wxPen pen1(*wxBLACK, .3);
+		bdc.SetPen(pen1);
+
+		float stepX = _panelSize.first / static_cast<float>(mapSize.first / 5);
+		for (int x = 0; x < mapSize.first; x += _grain)
+			bdc.DrawLine(x * stepX, 0, x * stepX, -mapSize.second);
+		float stepY = _panelSize.second / static_cast<float>(mapSize.second / 5);
+		for (int y = 0; y < mapSize.second; y += _grain)
+			bdc.DrawLine(0, -y * stepY, mapSize.first, -y * stepY);
+
 		for (int x = 25; x < GetClientSize().x - 220; x += 40)
 		{
 			for (int y = 25; y < GetClientSize().y - 30; y += 40)
-			{
-				wxPen pen(*wxBLACK, 3);
+			{	
+				wxPen pen(*wxWHITE, 3);
 				bdc.SetPen(pen);
 				double h = 10.e-5;
 				double _x, _y, _t;
@@ -315,11 +299,14 @@ void MFrame::Repaint()
 
 				bdc.DrawCircle(x + x_end / dziel, -y - y_end / dziel, 3);
 
+				
+				
+				
 				double x_to_rotate = x + x_end / dziel * 0.7;
-				double y_to_rotate = y + y_end / dziel * 0.7;
+				double y_to_rotate = - y - y_end / dziel * 0.7;
 
-				double x_to_rotate_around = x_to_rotate - x;
-				double y_to_rotate_around = y_to_rotate - y;
+				double x_to_rotate_around = x + x_end / dziel;
+				double y_to_rotate_around = -y - y_end / dziel;
 
 				double x_prime1 = x_to_rotate_around * std::cos(M_PI / 6.) - y_to_rotate_around * std::sin(M_PI / 6.);
 				double y_prime1 = y_to_rotate_around * std::cos(M_PI / 6.) + x_to_rotate_around * std::sin(M_PI / 6.);
@@ -329,25 +316,18 @@ void MFrame::Repaint()
 
 				x_prime1 += x_to_rotate_around;
 				x_prime2 += x_to_rotate_around;
-				y_prime1 += y_to_rotate_around;
-				y_prime2 += y_to_rotate_around;
+				y_prime1 -= y_to_rotate_around;
+				y_prime2 -= y_to_rotate_around;
 
 				double dziel1 = std::sqrt(std::pow(x_prime1 - (x + x_end / dziel), 2) + std::pow(y_prime1 - (y + y_end / dziel), 2));
 
-				//bdc.DrawLine(x + x_end / dziel, -y - y_end / dziel, x_prime1, y_prime1);
+				//bdc.DrawLine(x + x_end / dziel, -y - y_end / dziel, x_prime1, -y_prime1);
 				//bdc.DrawLine(x + x_end / dziel, -y - y_end / dziel, x_prime2, -y_prime2);
 
-				//bdc.DrawPolygon({ wxPoint(x + x_end / dziel, -y - y_end / dziel, 3) });
 			}
 		}
 	}
-	//mdc.DrawBitmap(contourBmp, 0, -_panelSize.second);
-	float stepX = _panelSize.first / static_cast<float>(mapSize.first / 5);
-	for (int x = 0; x < mapSize.first / 5; x += _grain)
-		bdc.DrawLine(x * stepX, 0, x * stepX, -5);
-	float stepY = _panelSize.second / static_cast<float>(mapSize.second / 5);
-	for (int y = 0; y < mapSize.second / 5; y += _grain)
-		bdc.DrawLine(0, -y * stepY, 5, -y * stepY);
+	
 
 
 }

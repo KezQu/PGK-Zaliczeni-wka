@@ -14,6 +14,9 @@
 #include <filesystem>
 #include <stack>
 #include <map>
+#include <string>
+#include <string_view>
+#include <atomic>
 
 class MFrame : public BFrame
 {
