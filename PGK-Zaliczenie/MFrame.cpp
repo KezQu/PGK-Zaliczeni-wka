@@ -32,93 +32,40 @@ void MFrame::bmpPanelOnSize(wxSizeEvent& event)
 	Repaint();
 }
 
-int calculate(std::string s) {
-	struct Op {
-		char c;
-		char precidence;
-		int (*fct) (int oper1, int oper2);
-	} ops[] = {
-	  {'+', 1, [](int oper1, int oper2) -> int { return oper1 + oper2; }},
-	  {'-', 1, [](int oper1, int oper2) -> int { return oper1 - oper2; }},
-	  {'*', 2, [](int oper1, int oper2) -> int { return oper1 * oper2; }},
-	  {'/', 2, [](int oper1, int oper2) -> int { return oper1 / oper2; }} };
-
-	std::stack <Op*> operators;
-	std::stack <int> operands;
-
-	// Function that will process the top operator from the stack
-	auto process_op = [](std::stack<Op*>& operators, std::stack<int>& operands) -> void {
-		int operand2 = operands.top();
-		operands.pop();
-		int operand1 = operands.top();
-		operands.pop();
-		Op* op = operators.top();
-		operators.pop();
-		operands.push(op->fct(operand1, operand2));
-	};
-
-	const char* str = s.c_str();
-	while (*str) {
-		// Skip whitespace
-		if (iswspace(*str)) { ++str; }
-		// Reading operand
-		else if (iswdigit(*str)) {
-			char* end_pos;
-			int operand = strtol(str, &end_pos, 10);
-			str = end_pos;
-			operands.push(operand);
-		}
-		else {
-			// Find the corresponding operator
-			for (auto& op : ops) {
-				if (*str == op.c) {
-					// Process any pending operators with a higher or equal precidence
-					while (!operators.empty() && operators.top()->precidence >= op.precidence) {
-						process_op(operators, operands);
-					}
-					operators.push(&op);
-					++str;
-					break;
-				}
-			}
-		}
-	}
-
-	// Flush any remaining operators
-	while (!operators.empty()) {
-		process_op(operators, operands);
-	}
-
-	return operands.top();
-}
 void MFrame::submitButtonOnButtonClick(wxCommandEvent& event)
 {
+	minMax = { FLT_MAX,FLT_MIN };
 	_cachedData.resize(mapSize.first);
+	contourImg_org.Destroy();
+	contourImg_cpy.Destroy();
+	vectorImg_org.Destroy();
+	vectorImg_cpy.Destroy();
+	FuncInsert->GetValue().ToStdString().length() == 0 ? fun_formula = "x^2+y^2" : fun_formula = FuncInsert->GetValue().ToStdString().c_str();
 
-#pragma omp parallel for
-	for (int x = 0; x < mapSize.first; x++)
+
+	//#pragma omp parallel for
+	for (int i = 0; i < mapSize.first; i++)
 	{
-		_cachedData[x].resize(mapSize.second);
-		for (int y = 0; y < mapSize.second; y++)
+		_cachedData[i].resize(mapSize.second);
+		for (int j = 0; j < mapSize.second; j++)
 		{
-			float _x = x / _grain;
-			float _y = y / _grain;
-			//float fVal = _x*_x + _y*_y;
-			float fVal = std::cbrt(_x * _y / 80.) +  std::sin(_y * std::sqrt(_x ) / 80.);
-			//float fVal = std::cbrt(_y * std::sqrt(_x ) / 100.) + std::sin(_x / (_y + 1));
-			//float fVal = std::pow((_x - 50) , 2) + std::sin(_y) + _y;
-			//float fVal = std::sin(_x ) + std::cos(_y );
-			//float fVal = std::sin((_x  * _x + _y * _y ) / 10.);
-			//float fVal = (_x / 10. * std::sin(2 * _y / 10.)) - 1.;
-			//float fVal = (_x * (2 * _x  - 7) * (2 * _y + 1) + 2 * _y );
+			double x, y;
+			te_variable vars[] = { {"x",&x}, {"y",&y} };
+			int err;
+			te_expr* expr = te_compile(fun_formula.c_str(), vars, 2, &err);
+			x = i / _grain;
+			y = j / _grain;
+			float fVal = te_eval(expr);
 			if (fVal < minMax.first)
 				minMax.first = fVal;
 			if (fVal > minMax.second)
 				minMax.second = fVal;
-
-			_cachedData[x][y] = fVal;
+			_cachedData[i][j] = fVal;
+			te_free(expr);
 		}
 	}
+
+	fun_formula.clear();
 	CalculateContour();
 	CalculateVector();
 	_functionLoaded = true;
@@ -135,6 +82,7 @@ void MFrame::vectorButtonOnButtonClick(wxCommandEvent& event)
 	_bmp = VECTOR;
 	Repaint();
 }
+
 
 void MFrame::saveButtonOnButtonClick(wxCommandEvent& event)
 {
@@ -166,14 +114,77 @@ void MFrame::saveButtonOnButtonClick(wxCommandEvent& event)
 void MFrame::animateButtonOnToggleButton(wxCommandEvent& event)
 {
 }
+/// liczy y lezace na prostej pomiedzy dwoma punktami
+/// liczy y lezace na prostej pomiedzy dwoma punktami
+double calculate_y(double x_s, double y_s, double x_e, double y_e, double x_curr)
+{
+	double x_a = x_s - x_e;
+	double y_a = y_s - y_e;
+	double x_b = x_curr - x_e;
+	if (y_e < y_s)
+	{
+		for (double i = y_e; i <= y_s; i += 0.01)
+		{
+			double y_b = i - y_e;
+			double area = x_a * y_b - y_a * x_b;
+			if (std::abs(area) < 0.05) return y_b;
+		}
+	}
+	else
+	{
+		for (double i = y_s; i <= y_e; i += 0.01)
+		{
+			double y_b = i - y_e;
+			double area = x_a * y_b - y_a * x_b;
+			if (std::abs(area) < 1) return y_b;
+		}
+	}
+}
+// wyznacza wszystkie punkty lezace miedzy start i end
+std::vector<std::pair<int, int>> calculate_point(int x_start, int y_start)
+{
+	std::vector<std::pair<int, int>> point_vector;
+	double normalize_size = std::sqrt(std::pow(static_cast<double>(x_start), 2) + std::pow(static_cast<double>(y_start), 2)) / 10.;
+	double x_end = static_cast<double>(x_start) - 2 * static_cast<double>(x_start) / normalize_size;
+	double y_end = static_cast<double>(y_start) - 2 * static_cast<double>(y_start) / normalize_size;
+
+	if (x_start < x_end)
+	{
+		for (double i = x_start; i <= x_end; i++)
+		{
+			double y_curr = calculate_y(x_start, y_start, x_end, y_end, i);
+			point_vector.push_back({ i, y_curr });
+			point_vector.push_back({ i, y_curr + 1. });
+			point_vector.push_back({ i, y_curr - 1. });
+			point_vector.push_back({ i, y_curr + 2. });
+			point_vector.push_back({ i, y_curr - 2. });
+		}
+	}
+	else
+	{
+		for (double i = x_end; i <= x_start; i++)
+		{
+			double y_curr = calculate_y(x_start, y_start, x_end, y_end, i);
+			point_vector.push_back({ i, y_curr });
+			point_vector.push_back({ i, y_curr + 1. });
+			point_vector.push_back({ i, y_curr - 1. });
+			point_vector.push_back({ i, y_curr + 2. });
+			point_vector.push_back({ i, y_curr - 2. });
+		}
+	}
+
+	return point_vector;
+}
+
+
 
 void MFrame::CalculateContour()
 {
 	double contourHeight = (minMax.second - minMax.first) / static_cast<double>(CONTOURCOUNT);
-//
+	//
 #pragma omp parallel for
-	for (int y = 0; y < mapSize.second-1; y++)
-		for (int x = 0; x < mapSize.first-1; x++)
+	for (int y = 0; y < mapSize.second - 1; y++)
+		for (int x = 0; x < mapSize.first - 1; x++)
 		{
 			if (static_cast<int>(_cachedData[x + 1][y + 1] / contourHeight) == static_cast<int>(_cachedData[x + 1][y] / contourHeight)
 				&& static_cast<int>(_cachedData[x + 1][y + 1] / contourHeight) == static_cast<int>(_cachedData[x][y + 1] / contourHeight)
@@ -185,9 +196,12 @@ void MFrame::CalculateContour()
 				for (int i = 0; i < 3; i++)
 					_contourData[(x + mapSize.first * y) * 3 + i] = 0;
 		}
+
 	contourImg_org.Create(mapSize.first, mapSize.second, _contourData, true);
 	contourImg_org = contourImg_org.Mirror(false);
 }
+
+
 
 void MFrame::CalculateVector()
 {
@@ -197,7 +211,7 @@ void MFrame::CalculateVector()
 		for (int x = 0; x < mapSize.first - 1; x++)
 		{
 			float normalisedVal = normalize(_cachedData[x][y]);
-			if(normalisedVal < 0.5)
+			if (normalisedVal < 0.5)
 			{
 				_vectorData[(x + mapSize.first * y) * 3 + 0] = 255 * 0;
 				_vectorData[(x + mapSize.first * y) * 3 + 1] = 255 * 2 * normalisedVal;
@@ -210,9 +224,15 @@ void MFrame::CalculateVector()
 				_vectorData[(x + mapSize.first * y) * 3 + 2] = 255 * 0;
 			}
 		}
+
+
+
+
 	vectorImg_org.Create(mapSize.first, mapSize.second, _vectorData, true);
 	vectorImg_org = vectorImg_org.Mirror(false);
 }
+
+
 
 void MFrame::Repaint()
 {
@@ -227,9 +247,10 @@ void MFrame::Repaint()
 	{
 		contourImg_cpy = contourImg_org.Copy();
 		contourImg_cpy = contourImg_cpy.Rescale(_panelSize.first, _panelSize.second, wxIMAGE_QUALITY_HIGH);
-		//contourImg_cpy = contourImg_cpy.ConvertToMono(255,255,255); // zamiast odcieni szaro�ci poziomice s� czarne
+		//contourImg_cpy = contourImg_cpy.ConvertToMono(255,255,255); // zamiast odcieni szarości poziomice są czarne
 		wxBitmap contourBmp(contourImg_cpy);
 		bdc.DrawBitmap(contourBmp, 0, -_panelSize.second);
+
 	}
 	else if (_bmp == VECTOR && _functionLoaded)
 	{
@@ -237,13 +258,94 @@ void MFrame::Repaint()
 		vectorImg_cpy = vectorImg_cpy.Rescale(_panelSize.first, _panelSize.second, wxIMAGE_QUALITY_HIGH);
 		wxBitmap vectorBmp(vectorImg_cpy);
 		bdc.DrawBitmap(vectorBmp, 0, -_panelSize.second);
+		FuncInsert->GetValue().ToStdString().length() == 0 ? fun_formula = "x^2+y^2" : fun_formula = FuncInsert->GetValue().ToStdString().c_str();
+		for (int x = 25; x < GetClientSize().x - 220; x += 40)
+		{
+			for (int y = 25; y < GetClientSize().y - 30; y += 40)
+			{
+				wxPen pen(*wxBLACK, 3);
+				bdc.SetPen(pen);
+				double h = 10.e-5;
+				double _x, _y;
+				te_variable vars[] = { {"x",&_x}, {"y",&_y} };
+				int err;
+
+				err = 0;
+				_x = (double)x + h;
+				_y = (double)y;
+				te_expr* expr = te_compile(fun_formula.c_str(), vars, 2, &err);
+				float fVal_xh = te_eval(expr);
+				te_free(expr);
+
+				err = 0;
+				_x = (double)x - h;
+				_y = (double)y;
+				expr = te_compile(fun_formula.c_str(), vars, 2, &err);
+				float fVal_xh2 = te_eval(expr);
+				te_free(expr);
+
+				err = 0;
+				_x = (double)x;
+				_y = (double)y + h;
+				expr = te_compile(fun_formula.c_str(), vars, 2, &err);
+				float fVal_yh = te_eval(expr);
+				te_free(expr);
+
+				err = 0;
+				_x = (double)x;
+				_y = (double)y - h;
+				expr = te_compile(fun_formula.c_str(), vars, 2, &err);
+				float fVal_yh2 = te_eval(expr);
+				te_free(expr);
+
+				double x_end = (fVal_xh - fVal_xh2) / (2. * h);
+				double y_end = (fVal_yh - fVal_yh2) / (2. * h);
+
+				float dziel = std::sqrt(std::pow(x_end, 2) + std::pow(y_end, 2)) / 20.;
+
+				bdc.DrawLine(x, -y, x + x_end / dziel, -y - y_end / dziel);
+
+				bdc.DrawCircle(x + x_end / dziel, -y - y_end / dziel, 3);
+
+				double x_to_rotate = x + x_end / dziel * 0.7;
+				double y_to_rotate = y + y_end / dziel * 0.7;
+
+				double x_to_rotate_around = x_to_rotate - x;
+				double y_to_rotate_around = y_to_rotate - y;
+
+				double x_prime1 = x_to_rotate_around * std::cos(M_PI / 6.) - y_to_rotate_around * std::sin(M_PI / 6.);
+				double y_prime1 = y_to_rotate_around * std::cos(M_PI / 6.) + x_to_rotate_around * std::sin(M_PI / 6.);
+
+				double x_prime2 = x_to_rotate_around * std::cos(-3.1415926535897932384626433832795 / 6.) - y_to_rotate_around * std::sin(-M_PI / 6.);
+				double y_prime2 = y_to_rotate_around * std::cos(-M_PI / 6.) + x_to_rotate_around * std::sin(-M_PI / 6.);
+
+				x_prime1 += x_to_rotate_around;
+				x_prime2 += x_to_rotate_around;
+				y_prime1 += y_to_rotate_around;
+				y_prime2 += y_to_rotate_around;
+
+				double dziel1 = std::sqrt(std::pow(x_prime1 - (x + x_end / dziel), 2) + std::pow(y_prime1 - (y + y_end / dziel), 2));
+
+				//bdc.DrawLine(x + x_end / dziel, -y - y_end / dziel, x_prime1, y_prime1);
+				//bdc.DrawLine(x + x_end / dziel, -y - y_end / dziel, x_prime2, -y_prime2);
+
+				//bdc.DrawPolygon({ wxPoint(x + x_end / dziel, -y - y_end / dziel, 3) });
+			}
+		}
 	}
+	//mdc.DrawBitmap(contourBmp, 0, -_panelSize.second);
 	float stepX = _panelSize.first / static_cast<float>(mapSize.first / 5);
 	for (int x = 0; x < mapSize.first / 5; x += _grain)
 		bdc.DrawLine(x * stepX, 0, x * stepX, -5);
 	float stepY = _panelSize.second / static_cast<float>(mapSize.second / 5);
 	for (int y = 0; y < mapSize.second / 5; y += _grain)
 		bdc.DrawLine(0, -y * stepY, 5, -y * stepY);
+
+
+}
+
+void MFrame::SaveToFile()
+{
 }
 
 void MFrame::CalcAnimation(bool generated)
@@ -252,97 +354,4 @@ void MFrame::CalcAnimation(bool generated)
 
 void MFrame::Animate()
 {
-}
-
-bool any(char ch, std::vector<char> vec){
-	for(auto &i: vec)
-		if(ch==i) return true;
-	return false;
-}
-
-float readOperator(float x, float y, char op){
-	switch(op){
-		case '+': return x+y;
-		case '-': return x-y;
-		case '/': return x/y;
-		case '*': return x*y;
-	}
-}
-
-float String2Fun(std::string input, int x, int y)
-{	
-	std::vector<char> possibleOperators{'+', '-', '/', '*'};
-    std::map<char, int> ops
-    {
-        {'(', -1},
-        {'+', 0},
-        {'-', 0},
-        {'/', 1},
-        {'*', 1},
-        {')', 10}
-    };
-	auto comp = ops.key_comp();
-    std::vector<char> operators;
-    std::vector<char> queue;
-    for (auto &ch : input) {
-		switch (ch) {
-		case '+':
-		case '-':
-			while (operators.size() && ops[operators.back()] > -1) {
-				queue.push_back(operators.back());
-				operators.pop_back();
-			}
-			operators.push_back(ch);
-            break;
-		case '/':
-		case '*':
-			while (operators.size() && ops[operators.back()] > 0) {
-				queue.push_back(operators.back());
-				operators.pop_back();
-			}
-			operators.push_back(ch);
-            break;
-		case '(':
-			operators.push_back(ch);
-            break;
-		case ')':
-			while (ops[operators.back()] > -1) {
-				queue.push_back(operators.back());
-				operators.pop_back();
-				if (operators.size() == 0 && (operators.size()+queue.size() +1 != input.size())) {
-					//some exception handling (error window or smthng can pop up)
-					std::cout<<"Parenthesis mismatch1\n";
-					
-				}
-			}
-			operators.pop_back();
-            break;
-		default:
-            queue.push_back(ch);
-        }
-	}
-    while (operators.size()>0) {
-        queue.push_back(operators.back());
-        operators.pop_back();
-		
-    }
-	float val;
-	std::vector<float> stack;
-	for(const auto& it: queue){
-		if(!any(it, possibleOperators)){
-			if(it=='x'){
-				stack.push_back(x);
-			}else if(it=='y'){
-				stack.push_back(y);
-			}else{
-				stack.push_back(it-48);//atoi does not work for some reason
-			}
-		}else{
-			val=readOperator(stack[stack.size()-2], stack[stack.size()-1], it);
-			stack.pop_back();
-			stack.pop_back();
-			stack.push_back(val);
-		}
-	}
-	return stack[0];
 }
