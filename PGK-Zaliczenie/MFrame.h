@@ -1,36 +1,35 @@
 #pragma once
+
 #include "BasicFrame.h"
+
 #include <wx/dcbuffer.h>
+#include <wx/dcmemory.h>
 #include <wx/filedlg.h>
 #include <wx/msgdlg.h> 
 #include <wx/wfstream.h>
 #include <wx/log.h> 
+#include <wx/affinematrix2d.h>
+
 #include <cmath>
 #include <limits>
-#include <memory>
-#include <functional>
-#include <cstring>
-#include <fstream>
 #include <filesystem>
-#include <stack>
-#include <map>
-#include <string>
-#include <string_view>
 #include <atomic>
+#include <thread>
 
 class MFrame : public BFrame
 {
 private:
 	std::vector<std::vector<float>> _cachedData;
 	std::pair<float, float> minMax = { FLT_MAX,FLT_MIN };
-	std::pair<int, int> mapSize = { 1000,1000 };
+	std::pair<int, int> mapSize = { 2000,2000 };
 	std::pair<int, int> _panelSize;
 	wxImage contourImg_org;
 	wxImage contourImg_cpy;
 	wxImage vectorImg_org;
 	wxImage vectorImg_cpy;
-	int t_val = 0;
-	std::string fun_formula = "x^2+y^2";
+	wxImage printable;
+	int t_val;
+	std::string fun_formula;
 	byte* _contourData;
 	byte* _vectorData;
 	enum {
@@ -59,6 +58,6 @@ public:
 	void Repaint();
 	void CalcAnimation(bool generated);
 	void Animate();
-	void SaveToFile();
+	void meshDraw(wxMemoryDC& dc);
 };
 

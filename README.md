@@ -11,3 +11,5 @@ Dodana mapa konturowa i pole wektorowe bez wektorów z samymi kolorami i prowizo
 Dodane rysowanie wektorow (z kropka na koncu bo zle dziala obracanie) i obsluga dowolnego wzoru funkcji (trzeba jeczsze dodac do zmiennych t i pole do jego zmiany)
 ********************************************************************************************************************************
 Dodane pole na wpisanie t
+********************************************************************************************************************************
+Poprawione strzałki i zapis do pliku oraz dodany bar z progresem ładowania funkcji

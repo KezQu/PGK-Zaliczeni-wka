@@ -20,11 +20,6 @@ MFrame::~MFrame()
 	free(_vectorData);
 }
 
-//void MFrame::mainPanelOnUpdateUI(wxUpdateUIEvent& event)
-//{
-//	Generate();
-//}
-
 void MFrame::bmpPanelOnSize(wxSizeEvent& event)
 {
 	bmpPanel->GetSize(&_panelSize.first, &_panelSize.second);
@@ -46,41 +41,48 @@ void MFrame::submitButtonOnButtonClick(wxCommandEvent& event)
 		wxMessageDialog(NULL, "Please enter the function formula!", "Warning", wxOK).ShowModal();
 		return;
 	}
-	fun_formula = FuncInsert->GetValue().ToStdString().c_str();
-
-
 	if (Tinsert->GetValue().ToStdString().length() == 0)
 	{
 		wxMessageDialog(NULL, "Please enter the t value!", "Warning", wxOK).ShowModal();
 		return;
 	}
-
+	fun_formula = FuncInsert->GetValue().ToStdString().c_str();
 	t_val = std::stof(Tinsert->GetValue().ToStdString());
-
-	//#pragma omp parallel for
-	for (int i = 0; i < mapSize.first; i++)
-	{
-		_cachedData[i].resize(mapSize.second);
-		for (int j = 0; j < mapSize.second; j++)
+	std::atomic<int> progress{ 0 };
+	std::thread cachingData([&]() {
+		//#pragma omp parallel for
+		for (int i = 0; i < mapSize.first; i++)
 		{
-			double x, y, t;
-			te_variable vars[] = { {"x",&x}, {"y",&y}, {"t",&t} };
-			int err;
-			t = t_val;
-			te_expr* expr = te_compile(fun_formula.c_str(), vars, 3, &err);
-			x = i / _grain;
-			y = j / _grain;
-			float fVal = te_eval(expr);
-			if (fVal < minMax.first)
-				minMax.first = fVal;
-			if (fVal > minMax.second)
-				minMax.second = fVal;
-			_cachedData[i][j] = fVal;
-			te_free(expr);
+			_cachedData[i].resize(mapSize.second);
+			for (int j = 0; j < mapSize.second; j++)
+			{
+				double x, y, t;
+				te_variable vars[] = { {"x",&x}, {"y",&y}, {"t",&t} };
+				int err;
+				te_expr* expr = te_compile(fun_formula.c_str(), vars, 3, &err);
+				t = t_val * _grain;
+				x = i / _grain;
+				y = j / _grain;
+				float fVal = te_eval(expr);
+				if (fVal < minMax.first)
+					minMax.first = fVal;
+				if (fVal > minMax.second)
+					minMax.second = fVal;
+				_cachedData[i][j] = fVal;
+				te_free(expr);
+			}
+			progress++;
 		}
-	}
-
-	fun_formula.clear();
+	});
+	loadingBar->Show();
+	std::pair<int, int> tmpSBsize;
+	submitButton->GetSize(&tmpSBsize.first, &tmpSBsize.second);
+	loadingBar->SetPosition(wxPoint(submitButton->GetPosition().x, submitButton->GetPosition().y + tmpSBsize.second));
+	while (progress < mapSize.first)
+		loadingBar->SetValue(progress / static_cast<double>(mapSize.first) * 100);
+	cachingData.join();
+	loadingBar->Hide();
+	
 	CalculateContour();
 	CalculateVector();
 	_functionLoaded = true;
@@ -107,30 +109,18 @@ void MFrame::saveButtonOnButtonClick(wxCommandEvent& event)
 	if (sfDialog.ShowModal() == wxID_CANCEL)
 		return;
 	//wxFileOutputStream output_stream(saveFileDialog.GetPath());
-	if (!contourImg_org.IsOk() || !vectorImg_org.IsOk())
+	if (!printable.IsOk())
 	{
 		wxLogError("Cannot save current bitmaps in file '%s'.", sfDialog.GetPath());
 		return;
 	}
 	else
-	{
-		wxImage mergedBmps(contourImg_org.GetSize().Scale(1, 2));
-		mergedBmps.Paste(contourImg_org, 0, 0);
-		mergedBmps.Paste(vectorImg_org, 0, contourImg_org.GetHeight());
-		if (!mergedBmps.IsOk())
-		{
-			wxLogError("Failed merging bitmaps '%s'.", sfDialog.GetPath());
-			return;
-		}
-		mergedBmps.SaveFile(sfDialog.GetPath());
-	}
+		printable.SaveFile(sfDialog.GetPath());
 }
 
 void MFrame::animateButtonOnToggleButton(wxCommandEvent& event)
 {
 }
-
-
 
 void MFrame::CalculateContour()
 {
@@ -149,12 +139,18 @@ void MFrame::CalculateContour()
 				for (int i = 0; i < 3; i++)
 					_contourData[(x + mapSize.first * y) * 3 + i] = 0;
 		}
-
 	contourImg_org.Create(mapSize.first, mapSize.second, _contourData, true);
 	contourImg_org = contourImg_org.Mirror(false);
+
+	wxBitmap contourBmp = wxBitmap(contourImg_org);
+	wxMemoryDC mdc(contourBmp);
+	
+	mdc.SetDeviceOrigin(0, mapSize.second);
+
+	mdc.SetPen(wxPen(*wxBLACK, .3));
+	meshDraw(mdc);
+	contourImg_org = mdc.GetAsBitmap().ConvertToImage();
 }
-
-
 
 void MFrame::CalculateVector()
 {
@@ -177,15 +173,70 @@ void MFrame::CalculateVector()
 				_vectorData[(x + mapSize.first * y) * 3 + 2] = 255 * 0;
 			}
 		}
-
-
-
-
 	vectorImg_org.Create(mapSize.first, mapSize.second, _vectorData, true);
 	vectorImg_org = vectorImg_org.Mirror(false);
+
+	wxBitmap vectorBmp = wxBitmap(vectorImg_org);
+	wxMemoryDC mdc(vectorBmp);
+	
+	mdc.SetDeviceOrigin(0, mapSize.second);
+
+	wxPen pen1(*wxBLACK, .3);
+	mdc.SetPen(pen1);
+	meshDraw(mdc);
+	
+	for (int x = 2 * _grain; x < mapSize.first; x += 5 * _grain)
+	{
+		for (int y = 2 * _grain; y < mapSize.second; y += 5 * _grain)
+		{
+
+			wxPen pen(*wxBLACK, 2);
+			mdc.SetPen(pen);
+			long double h = 1e-5;
+			long double _x, _y, _t;
+			te_variable vars[] = { {"x",&_x}, {"y",&_y}, {"t",&_t} };
+			int err{ 0 };
+			_t = t_val * _grain;
+
+			auto vecLength = [&](long double x, long double y){
+				_x = x;
+				_y = y;
+				te_expr* expr = te_compile(fun_formula.c_str(), vars, 3, &err);
+				long double fVal = te_eval(expr);
+				te_free(expr);
+				return fVal;
+			};
+
+			long double fVal_xh = vecLength(x + h, y);
+			long double fVal_xh2 = vecLength(x - h, y);
+
+			long double fVal_yh = vecLength(x, y + h);
+			long double fVal_yh2 = vecLength(x, y - h);
+
+			long double x_end = (fVal_xh - fVal_xh2) / (2. * h);
+			long double y_end = (fVal_yh - fVal_yh2) / (2. * h);
+
+			long double dziel = std::sqrt(std::pow(x_end, 2) + std::pow(y_end, 2)) / (2 * _grain);
+			
+			mdc.DrawLine(x, -y, x + x_end / dziel, -y - y_end / dziel);
+
+			std::pair<wxAffineMatrix2D, wxAffineMatrix2D> Tmtx;
+
+			Tmtx.first.Translate(x, -y);
+			Tmtx.first.Rotate(M_PI / 12);
+			
+			Tmtx.second.Translate(x, -y);
+			Tmtx.second.Rotate(-M_PI / 12);
+
+			auto Lwing = Tmtx.first.TransformPoint(wxPoint2DDouble(x_end / (2 * dziel), -y_end / (2 * dziel)));
+			auto Rwing = Tmtx.second.TransformPoint(wxPoint2DDouble(x_end / (2 * dziel), -y_end / (2 * dziel)));
+
+			mdc.DrawLine(x, -y, Lwing.m_x, Lwing.m_y);
+			mdc.DrawLine(x, -y, Rwing.m_x, Rwing.m_y);
+		}
+	}
+	vectorImg_org = mdc.GetAsBitmap().ConvertToImage();
 }
-
-
 
 void MFrame::Repaint()
 {
@@ -196,25 +247,23 @@ void MFrame::Repaint()
 	bdc.SetDeviceOrigin(0, _panelSize.second);
 	bdc.Clear();
 
+	if (_functionLoaded)
+	{
+		printable = wxImage(contourImg_org.GetSize().Scale(1, 2));
+		printable.Paste(contourImg_org, 0, 0);
+		printable.Paste(vectorImg_org, 0, contourImg_org.GetHeight());
+		if (!printable.IsOk())
+		{
+			wxLogError("Failed merging bitmaps");
+			return;
+		}
+	}
 	if (_bmp == CONTOUR && _functionLoaded)
 	{
-		
 		contourImg_cpy = contourImg_org.Copy();
 		contourImg_cpy = contourImg_cpy.Rescale(_panelSize.first, _panelSize.second, wxIMAGE_QUALITY_HIGH);
-		//contourImg_cpy = contourImg_cpy.ConvertToMono(255,255,255); // zamiast odcieni szarości poziomice są czarne
 		wxBitmap contourBmp(contourImg_cpy);
 		bdc.DrawBitmap(contourBmp, 0, -_panelSize.second);
-
-		wxPen pen1(wxColor(156, 156, 156), .3);
-		bdc.SetPen(pen1);
-
-		float stepX = _panelSize.first / static_cast<float>(mapSize.first / 5);
-		for (int x = 0; x < mapSize.first; x += _grain)
-			bdc.DrawLine(x * stepX, 0, x * stepX, -mapSize.second);
-		float stepY = _panelSize.second / static_cast<float>(mapSize.second / 5);
-		for (int y = 0; y < mapSize.second; y += _grain)
-			bdc.DrawLine(0, -y * stepY, mapSize.first, -y * stepY);
-
 	}
 	else if (_bmp == VECTOR && _functionLoaded)
 	{
@@ -222,118 +271,7 @@ void MFrame::Repaint()
 		vectorImg_cpy = vectorImg_cpy.Rescale(_panelSize.first, _panelSize.second, wxIMAGE_QUALITY_HIGH);
 		wxBitmap vectorBmp(vectorImg_cpy);
 		bdc.DrawBitmap(vectorBmp, 0, -_panelSize.second);
-		if (FuncInsert->GetValue().ToStdString().length() == 0)
-		{
-			wxMessageDialog(NULL, "Please enter the function formula!", "Warning", wxOK).ShowModal();
-			return;
-		}
-		fun_formula = FuncInsert->GetValue().ToStdString().c_str();
-
-		if (Tinsert->GetValue().ToStdString().length() == 0)
-		{
-			wxMessageDialog(NULL, "Please enter the t value!", "Warning", wxOK).ShowModal();
-			return;
-		}
-		t_val = std::stof(Tinsert->GetValue().ToStdString());
-
-		wxPen pen1(*wxBLACK, .3);
-		bdc.SetPen(pen1);
-
-		float stepX = _panelSize.first / static_cast<float>(mapSize.first / 5);
-		for (int x = 0; x < mapSize.first; x += _grain)
-			bdc.DrawLine(x * stepX, 0, x * stepX, -mapSize.second);
-		float stepY = _panelSize.second / static_cast<float>(mapSize.second / 5);
-		for (int y = 0; y < mapSize.second; y += _grain)
-			bdc.DrawLine(0, -y * stepY, mapSize.first, -y * stepY);
-
-		for (int x = 25; x < GetClientSize().x - 220; x += 40)
-		{
-			for (int y = 25; y < GetClientSize().y - 30; y += 40)
-			{	
-				wxPen pen(*wxWHITE, 3);
-				bdc.SetPen(pen);
-				double h = 10.e-5;
-				double _x, _y, _t;
-				te_variable vars[] = { {"x",&_x}, {"y",&_y}, {"t",&_t} };
-				int err;
-				_t = t_val;
-
-				err = 0;
-				_x = (double)x + h;
-				_y = (double)y;
-				_t = t_val;
-				te_expr* expr = te_compile(fun_formula.c_str(), vars, 3, &err);
-				float fVal_xh = te_eval(expr);
-				te_free(expr);
-
-				err = 0;
-				_x = (double)x - h;
-				_y = (double)y;
-				_t = t_val;
-				expr = te_compile(fun_formula.c_str(), vars, 3, &err);
-				float fVal_xh2 = te_eval(expr);
-				te_free(expr);
-
-				err = 0;
-				_x = (double)x;
-				_y = (double)y + h;
-				_t = t_val;
-				expr = te_compile(fun_formula.c_str(), vars, 3, &err);
-				float fVal_yh = te_eval(expr);
-				te_free(expr);
-
-				err = 0;
-				_x = (double)x;
-				_y = (double)y - h;
-				_t = t_val;
-				expr = te_compile(fun_formula.c_str(), vars, 3, &err);
-				float fVal_yh2 = te_eval(expr);
-				te_free(expr);
-
-				double x_end = (fVal_xh - fVal_xh2) / (2. * h);
-				double y_end = (fVal_yh - fVal_yh2) / (2. * h);
-
-				float dziel = std::sqrt(std::pow(x_end, 2) + std::pow(y_end, 2)) / 20.;
-
-				bdc.DrawLine(x, -y, x + x_end / dziel, -y - y_end / dziel);
-
-				bdc.DrawCircle(x + x_end / dziel, -y - y_end / dziel, 3);
-
-				
-				
-				
-				double x_to_rotate = x + x_end / dziel * 0.7;
-				double y_to_rotate = - y - y_end / dziel * 0.7;
-
-				double x_to_rotate_around = x + x_end / dziel;
-				double y_to_rotate_around = -y - y_end / dziel;
-
-				double x_prime1 = x_to_rotate_around * std::cos(M_PI / 6.) - y_to_rotate_around * std::sin(M_PI / 6.);
-				double y_prime1 = y_to_rotate_around * std::cos(M_PI / 6.) + x_to_rotate_around * std::sin(M_PI / 6.);
-
-				double x_prime2 = x_to_rotate_around * std::cos(-3.1415926535897932384626433832795 / 6.) - y_to_rotate_around * std::sin(-M_PI / 6.);
-				double y_prime2 = y_to_rotate_around * std::cos(-M_PI / 6.) + x_to_rotate_around * std::sin(-M_PI / 6.);
-
-				x_prime1 += x_to_rotate_around;
-				x_prime2 += x_to_rotate_around;
-				y_prime1 -= y_to_rotate_around;
-				y_prime2 -= y_to_rotate_around;
-
-				double dziel1 = std::sqrt(std::pow(x_prime1 - (x + x_end / dziel), 2) + std::pow(y_prime1 - (y + y_end / dziel), 2));
-
-				//bdc.DrawLine(x + x_end / dziel, -y - y_end / dziel, x_prime1, -y_prime1);
-				//bdc.DrawLine(x + x_end / dziel, -y - y_end / dziel, x_prime2, -y_prime2);
-
-			}
-		}
 	}
-	
-
-
-}
-
-void MFrame::SaveToFile()
-{
 }
 
 void MFrame::CalcAnimation(bool generated)
@@ -343,3 +281,13 @@ void MFrame::CalcAnimation(bool generated)
 void MFrame::Animate()
 {
 }
+
+void MFrame::meshDraw(wxMemoryDC & dc)
+{
+	for (int x = 0; x < mapSize.first; x += _grain * 10)
+		dc.DrawLine(x, 0, x, -mapSize.second);
+	for (int y = 0; y < mapSize.second; y += _grain * 10)
+		dc.DrawLine(0, -y, mapSize.first, -y);
+
+	dc.DrawCircle(mapSize.first / 2., mapSize.second / 2., 100);
+};

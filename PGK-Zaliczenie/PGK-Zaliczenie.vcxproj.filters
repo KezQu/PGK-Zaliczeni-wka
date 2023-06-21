@@ -24,7 +24,7 @@
     <ClCompile Include="MFrame.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\tinyexpr.c">
+    <ClCompile Include="tinyexpr.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -35,7 +35,7 @@
     <ClInclude Include="MFrame.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\tinyexpr.h">
+    <ClInclude Include="tinyexpr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

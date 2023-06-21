@@ -71,8 +71,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\wxWidgets-3.2.2.1\include\msvc;C:\wxWidgets-3.2.2.1\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\wxWidgets-3.2.2.1\lib\vc_x64_lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\PGK\Zaliczeniówka\PGK-Zaliczeni-wka\wxWidgets-3.2.2.1\include\msvc;D:\PGK\Zaliczeniówka\PGK-Zaliczeni-wka\wxWidgets-3.2.2.1\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\PGK\Zaliczeniówka\PGK-Zaliczeni-wka\wxWidgets-3.2.2.1\lib\vc_x64_lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(SolutionDir)wxWidgets-3.2.2.1\include\msvc;$(SolutionDir)wxWidgets-3.2.2.1\include;$(IncludePath)</IncludePath>
@@ -141,15 +141,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\tinyexpr.c" />
     <ClCompile Include="BasicFrame.cpp" />
     <ClCompile Include="MFrame.cpp" />
     <ClCompile Include="Source.cpp" />
+    <ClCompile Include="tinyexpr.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\tinyexpr.h" />
     <ClInclude Include="BasicFrame.h" />
     <ClInclude Include="MFrame.h" />
+    <ClInclude Include="tinyexpr.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
