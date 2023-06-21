@@ -11,7 +11,7 @@
 BFrame::BFrame(wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style) : wxFrame(parent, id, title, pos, size, style)
 {
 	this->SetSizeHints(wxDefaultSize, wxDefaultSize);
-
+	SetMinClientSize(wxSize(800, 600));
 	wxBoxSizer* bSizer1;
 	bSizer1 = new wxBoxSizer(wxHORIZONTAL);
 
@@ -41,7 +41,7 @@ BFrame::BFrame(wxWindow* parent, wxWindowID id, const wxString& title, const wxP
 
 	bSizer5->Add(m_staticText1, 0, wxALL, 5);
 
-	FuncInsert = new wxTextCtrl(mainPanel, wxID_ANY, wxT("x^2+y+2"), wxDefaultPosition, wxDefaultSize, 0);
+	FuncInsert = new wxTextCtrl(mainPanel, wxID_ANY, wxT("x^2+y^2"), wxDefaultPosition, wxDefaultSize, 0);
 	bSizer5->Add(FuncInsert, 0, wxALL | wxEXPAND, 5);
 
 	m_staticText2 = new wxStaticText(mainPanel, wxID_ANY, wxT("Pass value for t"), wxDefaultPosition, wxDefaultSize, 0);
