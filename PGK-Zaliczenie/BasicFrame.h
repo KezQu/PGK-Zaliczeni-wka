@@ -48,7 +48,6 @@ class BFrame : public wxFrame
 		wxButton* contourButton;
 		wxButton* vectorButton;
 		wxButton* saveButton;
-		wxToggleButton* animateButton;
 
 		// Virtual event handlers, override them in your derived class
 		virtual void mainPanelOnUpdateUI( wxUpdateUIEvent& event ) { event.Skip(); }
@@ -57,8 +56,6 @@ class BFrame : public wxFrame
 		virtual void contourButtonOnButtonClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void vectorButtonOnButtonClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void saveButtonOnButtonClick( wxCommandEvent& event ) { event.Skip(); }
-		virtual void animateButtonOnToggleButton( wxCommandEvent& event ) { event.Skip(); }
-		virtual void animateButtonOnUpdateUI( wxUpdateUIEvent& event ) { event.Skip(); }
 
 
 	public:
