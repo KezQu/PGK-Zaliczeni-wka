@@ -118,10 +118,6 @@ void MFrame::saveButtonOnButtonClick(wxCommandEvent& event)
 		printable.SaveFile(sfDialog.GetPath());
 }
 
-void MFrame::animateButtonOnToggleButton(wxCommandEvent& event)
-{
-}
-
 void MFrame::CalculateContour()
 {
 	double contourHeight = (minMax.second - minMax.first) / static_cast<double>(CONTOURCOUNT);
@@ -272,14 +268,6 @@ void MFrame::Repaint()
 		wxBitmap vectorBmp(vectorImg_cpy);
 		bdc.DrawBitmap(vectorBmp, 0, -_panelSize.second);
 	}
-}
-
-void MFrame::CalcAnimation(bool generated)
-{
-}
-
-void MFrame::Animate()
-{
 }
 
 void MFrame::meshDraw(wxMemoryDC & dc)

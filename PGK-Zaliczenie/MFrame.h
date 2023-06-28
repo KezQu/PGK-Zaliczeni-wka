@@ -175,12 +175,6 @@ public:
 	 * @param event 
 	 */
 	void saveButtonOnButtonClick(wxCommandEvent& event) override;
-	/**
-	 * @brief Turning on the animation
-	 * 
-	 * @param event 
-	 */
-	void animateButtonOnToggleButton(wxCommandEvent& event) override;
 
 	/**
 	 * @brief Setup for contour map, calculating color values

@@ -77,9 +77,6 @@ BFrame::BFrame( wxWindow* parent, wxWindowID id, const wxString& title, const wx
 	saveButton = new wxButton( mainPanel, wxID_ANY, wxT("Save to file"), wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer5->Add( saveButton, 0, wxALL|wxEXPAND, 5 );
 
-	animateButton = new wxToggleButton( mainPanel, wxID_ANY, wxT("Animate"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer5->Add( animateButton, 0, wxALL|wxEXPAND, 5 );
-
 
 	bSizer51->Add( bSizer5, 0, wxEXPAND, 0 );
 
@@ -102,8 +99,6 @@ BFrame::BFrame( wxWindow* parent, wxWindowID id, const wxString& title, const wx
 	contourButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BFrame::contourButtonOnButtonClick ), NULL, this );
 	vectorButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BFrame::vectorButtonOnButtonClick ), NULL, this );
 	saveButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BFrame::saveButtonOnButtonClick ), NULL, this );
-	animateButton->Connect( wxEVT_COMMAND_TOGGLEBUTTON_CLICKED, wxCommandEventHandler( BFrame::animateButtonOnToggleButton ), NULL, this );
-	animateButton->Connect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( BFrame::animateButtonOnUpdateUI ), NULL, this );
 }
 
 BFrame::~BFrame()
@@ -115,7 +110,4 @@ BFrame::~BFrame()
 	contourButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BFrame::contourButtonOnButtonClick ), NULL, this );
 	vectorButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BFrame::vectorButtonOnButtonClick ), NULL, this );
 	saveButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BFrame::saveButtonOnButtonClick ), NULL, this );
-	animateButton->Disconnect( wxEVT_COMMAND_TOGGLEBUTTON_CLICKED, wxCommandEventHandler( BFrame::animateButtonOnToggleButton ), NULL, this );
-	animateButton->Disconnect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( BFrame::animateButtonOnUpdateUI ), NULL, this );
-
 }
