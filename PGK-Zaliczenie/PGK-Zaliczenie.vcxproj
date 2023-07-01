@@ -71,8 +71,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\Marcel\Desktop\grafika\PGK-Zaliczeni-wka\PGK-Zaliczenie\wxWidgets-3.2.2.1\include\msvc;C:\Users\Marcel\Desktop\grafika\PGK-Zaliczeni-wka\PGK-Zaliczenie\wxWidgets-3.2.2.1\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Marcel\Desktop\grafika\PGK-Zaliczeni-wka\PGK-Zaliczenie\wxWidgets-3.2.2.1\lib\vc_x64_lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)wxWidgets-3.2.2.1\include\msvc;$(SolutionDir)wxWidgets-3.2.2.1\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)wxWidgets-3.2.2.1\lib\vc_x64_lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(SolutionDir)wxWidgets-3.2.2.1\include\msvc;$(SolutionDir)wxWidgets-3.2.2.1\include;$(IncludePath)</IncludePath>
